@@ -1,6 +1,4 @@
-# ECE276A Project 3 - Joseph Chang
-
-## Visual-Intertial SLAM
+# Visual-Intertial SLAM
 
 ### Directory Structure
 
