@@ -2,7 +2,7 @@
 
 ### Directory Structure
 
-ECE276A_PR2_Local/...<br />
+ECE276A_PR3_Local/...<br />
 ├─── hw3_main.py<br />
 ├─── utils.py<br />
 ├─── plots/...<br />
