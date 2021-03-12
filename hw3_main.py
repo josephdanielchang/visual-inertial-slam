@@ -13,34 +13,34 @@ if __name__ == '__main__':
 
     # data 1. this data has features, use this if you plan to skip the extra credit feature detection and tracking part
     filename = "./data/10.npz"
-    t, features, linear_velocity, angular_velocity, K, b, imu_T_cam = load_data(filename, load_features=True)
+    t, features_total, linear_velocity, angular_velocity, K, b, imu_T_cam = load_data(filename, load_features=True)
 
     print(np.shape(t))                 # time: (1,3026)
-    print(np.shape(features))          # (4,13289,3026)
+    print(np.shape(features_total))    # (4,13289,3026)
     print(np.shape(linear_velocity))   # (3,3026)
     print(np.shape(angular_velocity))  # (3,3026)
     print(np.shape(K))                 # intrinsic calibration: (3,3)
     print(np.shape(b))                 # baseline: (1,1)
     print(np.shape(imu_T_cam))         # extrinsic calibration: (4,4)
 
-    landmark_count_og = np.shape(features)[1]       # 13289
+    feature_count_og = np.shape(features_total)[1]       # 13289
     transform_imu2camera = inv(imu_T_cam)
 
-    # downsample landmarks
-    landmarks = features[:, 0:landmark_count_og:10, :]
-    feature_count = np.shape(landmarks)[2]          # 3026
-    landmark_count = np.shape(landmarks)[1]         # 1329
+    # downsample features
+    features = features_total[:, 0:feature_count_og:5, :]
+    time_count = np.shape(features)[2]             # 3026
+    feature_count = np.shape(features)[1]          # 1329
 
     ### Initialize Parameters
 
     V = 90  # variance for gaussian noise
 
     # landmark mean and covariance (lecture 13, slide 8)
-    mu_landmarks = -1 * np.ones((4, landmark_count))  # initialize landmarks as empty
-    sigma_landmarks = np.identity(3*landmark_count) * V
+    mu_landmarks = -1 * np.ones((4, feature_count))  # initialize landmarks as empty
+    sigma_landmarks = np.identity(3*feature_count) * V
 
     temp = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]])
-    initialization = np.kron(np.identity(landmark_count), temp)
+    initialization = np.kron(np.identity(feature_count), temp)
 
     # stereo camera calibration matrix M (lecture 13, slide 2)
     f_su = K[0][0]
@@ -58,14 +58,14 @@ if __name__ == '__main__':
     sigma_imu = np.identity(6)
 
     # initial imu trajectory over all time
-    all_poses_size = (4, 4, feature_count)
+    all_poses_size = (4, 4, time_count)
     trajectory_imu = np.zeros(all_poses_size)
     trajectory_imu[:,:,0] = mu_imu  # pose at timestamp 0 initialized with identity matrix
 
     linear_velocity = np.transpose(linear_velocity)
     angular_velocity = np.transpose(angular_velocity)
 
-    for i in range(feature_count):
+    for i in range(time_count):
 
         print('iteration:', i)
 
@@ -117,7 +117,7 @@ if __name__ == '__main__':
         ### c) Landmark Mapping via EKF Update
 
         # features at this landmark
-        features_current = landmarks[:, :, i]
+        features_current = features[:, :, i]
 
         # sum features
         sum_of_feature_vectors = np.sum(features_current[:, :], 0)
@@ -171,7 +171,7 @@ if __name__ == '__main__':
 
                 ## Jacobian H(t+1,i)
 
-                feature_count_total = landmark_count
+                feature_count_total = feature_count
 
                 # projection matrix (lecture 13, slide 7)
                 P = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0]])
@@ -206,7 +206,7 @@ if __name__ == '__main__':
                 # EKF Update: landmark mean, covariance (lecture 13, slide 8)
                 z = features_current[:, features_update_indices].reshape((4, features_update_count))
                 mu_landmarks = (mu_landmarks.reshape(-1, 1, order='F') + np.dot(np.dot(initialization, K_update), (z - z_hat).reshape(-1, 1, order='F'))).reshape(4, -1, order='F')
-                sigma_landmarks = np.dot((np.identity(3 * np.shape(landmarks)[1]) - np.dot(K_update, H_update)), sigma_landmarks)
+                sigma_landmarks = np.dot((np.identity(3 * np.shape(features)[1]) - np.dot(K_update, H_update)), sigma_landmarks)
 
     ### d) visualize vehicle trajectory + landmarks using function from utils.py
     fig, ax = visualize_trajectory_2d(trajectory_imu, mu_landmarks, show_ori=True)
