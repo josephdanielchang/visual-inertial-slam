@@ -41,6 +41,7 @@ if __name__ == '__main__':
 
     temp = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]])
     initialization = np.kron(np.identity(feature_count), temp)
+    print(initialization)
 
     # stereo camera calibration matrix M (lecture 13, slide 2)
     f_su = K[0][0]
@@ -53,7 +54,7 @@ if __name__ == '__main__':
                   [f_su, 0, c_u, -f_su * b],
                   [0, f_sv, c_v, 0]])
 
-    # initial imu mean and variance
+    # initial imu pose (mean and variance)
     mu_imu = np.identity(4)
     sigma_imu = np.identity(6)
 
@@ -100,15 +101,6 @@ if __name__ == '__main__':
 
         mu_t_predict = np.dot(expm(-tau * u_t_hat), mu_imu)
         sigma_t_predict = np.dot(np.dot(expm(-tau * u_t_adjoint), sigma_imu), np.transpose(expm(-tau * u_t_adjoint))) + W
-
-        ### d) IMU Update Step based on stereo camera observation
-
-        # update imu trajectory
-        trajectory_imu[:, :, i] = inv(mu_t_predict)
-
-        # update imu mean and variance
-        mu_imu = mu_t_predict
-        sigma_imu = sigma_t_predict
 
         # update transforms
         transform_world2camera = np.dot(transform_imu2camera, mu_imu)
@@ -208,6 +200,15 @@ if __name__ == '__main__':
                 mu_landmarks = (mu_landmarks.reshape(-1, 1, order='F') + np.dot(np.dot(initialization, K_update), (z - z_hat).reshape(-1, 1, order='F'))).reshape(4, -1, order='F')
                 sigma_landmarks = np.dot((np.identity(3 * np.shape(features)[1]) - np.dot(K_update, H_update)), sigma_landmarks)
 
-    ### d) visualize vehicle trajectory + landmarks using function from utils.py
+        ### d) IMU Update Step based on stereo camera observation
+
+        # update imu trajectory
+        trajectory_imu[:, :, i] = inv(mu_t_predict)
+
+        # update imu mean and variance
+        mu_imu = mu_t_predict
+        sigma_imu = sigma_t_predict
+
+   # visualize vehicle trajectory + landmarks using function from utils.py
     fig, ax = visualize_trajectory_2d(trajectory_imu, mu_landmarks, show_ori=True)
 
