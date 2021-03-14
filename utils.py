@@ -59,10 +59,10 @@ def visualize_trajectory_2d(pose, landmark, path_name="Trajectory", show_ori=Fal
   '''
     fig, ax = plt.subplots(figsize=(5, 5))
     n_pose = pose.shape[2]
-    ax.plot(pose[0, 3, :], pose[1, 3, :], 'r-', label=path_name)
     ax.scatter(pose[0, 3, 0], pose[1, 3, 0], marker='s', label="start")
     ax.scatter(pose[0, 3, -1], pose[1, 3, -1], marker='o', label="end")
     ax.plot(landmark[0, :], landmark[1, :], 'bo', markersize=1, label="landmark")
+    ax.plot(pose[0, 3, :], pose[1, 3, :], 'r-', label=path_name)
 
     if show_ori:
         select_ori_index = list(range(0, n_pose, int(n_pose / 50)))
@@ -83,7 +83,5 @@ def visualize_trajectory_2d(pose, landmark, path_name="Trajectory", show_ori=Fal
     ax.grid(False)
     ax.legend()
     plt.show(block=True)
-    # plt.draw()
-    # plt.pause(.001)
 
     return fig, ax
